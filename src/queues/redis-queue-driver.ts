@@ -1,6 +1,6 @@
 import async from 'async';
 import { JobData } from '../webhook-sender';
-import { Queue, Worker, QueueScheduler } from 'bullmq'
+import { Queue, Worker } from 'bullmq'
 import { QueueInterface } from './queue-interface';
 import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
 import { Server } from '../server';
@@ -8,7 +8,6 @@ import { Server } from '../server';
 interface QueueWithWorker {
     queue: Queue;
     worker: Worker;
-    scheduler: QueueScheduler;
 }
 
 export class RedisQueueDriver implements QueueInterface {
@@ -82,9 +81,6 @@ export class RedisQueueDriver implements QueueInterface {
                         ...queueSharedOptions,
                         concurrency: this.server.options.queue.redis.concurrency,
                     }),
-                    // TODO: Seperate this from the queue with worker when multipe workers are supported.
-                    //       A single scheduler per queue is needed: https://docs.bullmq.io/guide/queuescheduler
-                    scheduler: new QueueScheduler(queueName, queueSharedOptions),
                 });
             }
 
@@ -96,9 +92,9 @@ export class RedisQueueDriver implements QueueInterface {
      * Clear the queues for a graceful shutdown.
      */
     disconnect(): Promise<void> {
-        return async.each([...this.queueWithWorker], ([queueName, { queue, worker, scheduler }]: [string, QueueWithWorker], callback) => {
-            scheduler.close().then(() => {
-                worker.close().then(() => callback());
+        return async.each([...this.queueWithWorker], ([queueName, { queue, worker }]: [string, QueueWithWorker], callback) => {
+            worker.close().then(() => {
+                queue.close().then(() => callback());
             });
         });
     }

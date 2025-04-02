@@ -125,6 +125,21 @@ export class Utils {
         return isClientEvent;
     }
 
+    static setNestedProperty(obj: any, path: string, value: any): void {
+        const keys = path.split('.');
+        let current = obj;
+    
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!(key in current) || typeof current[key] !== 'object') {
+                current[key] = {};
+            }
+            current = current[key];
+        }
+    
+        current[keys[keys.length - 1]] = value;
+    }
+
     /**
      * Check if the channel name is restricted for connections from the client.
      * Read: https://pusher.com/docs/channels/using_channels/channels/#channel-naming-conventions

@@ -1,13 +1,14 @@
 import async from 'async';
-import { Consumer } from 'sqs-consumer';
+import { Consumer, ConsumerOptions } from 'sqs-consumer';
 import { createHash } from 'crypto';
 import { Job } from '../job';
 import { JobData } from '../webhook-sender';
 import { Log } from '../log';
 import { QueueInterface } from './queue-interface';
 import { Server } from '../server';
-import { SQS } from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
+import { SQS } from 'aws-sdk';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
 export class SqsQueueDriver implements QueueInterface {
     /**
@@ -36,17 +37,17 @@ export class SqsQueueDriver implements QueueInterface {
                 QueueUrl: this.server.options.queue.sqs.queueUrl,
             };
 
-            this.sqsClient().sendMessage(params, (err, data) => {
-                if (err) {
-                    Log.errorTitle('❎ SQS client could not publish to the queue.');
-                    Log.error({ data, err, params, queueName });
-                }
+            const command = new SendMessageCommand(params);
 
-                if (this.server.options.debug && !err) {
-                    Log.successTitle('✅ SQS client publsihed message to the queue.');
-                    Log.success({ data, err, params, queueName });
+            this.sqsClient().send(command).then(data => {
+                if (this.server.options.debug) {
+                    Log.successTitle('✅ SQS client published message to the queue.');
+                    Log.success({ data, params, queueName });
                 }
-
+                resolve();
+            }).catch(err => {
+                Log.errorTitle('❎ SQS client could not publish to the queue.');
+                Log.error({ err, params, queueName });
                 resolve();
             });
         });
@@ -73,7 +74,7 @@ export class SqsQueueDriver implements QueueInterface {
                 });
             };
 
-            let consumerOptions = {
+            let consumerOptions: ConsumerOptions = {
                 queueUrl: this.server.options.queue.sqs.queueUrl,
                 sqs: this.sqsClient(),
                 batchSize: this.server.options.queue.sqs.batchSize,
@@ -106,7 +107,7 @@ export class SqsQueueDriver implements QueueInterface {
      */
     disconnect(): Promise<void> {
         return async.each([...this.queueWithConsumer], ([queueName, consumer]: [string, Consumer], callback) => {
-            if (consumer.isRunning) {
+            if (consumer.status.isRunning) {
                 consumer.stop();
                 callback();
             }
@@ -116,14 +117,14 @@ export class SqsQueueDriver implements QueueInterface {
     /**
      * Get the SQS client.
      */
-    protected sqsClient(): SQS {
+    protected sqsClient(): SQSClient {
         let sqsOptions = this.server.options.queue.sqs;
 
-        return new SQS({
+        return new SQSClient({
             apiVersion: '2012-11-05',
             region: sqsOptions.region || 'us-east-1',
             endpoint: sqsOptions.endpoint,
-            ...sqsOptions.clientOptions,
+            logger: undefined, // Ensure logger is compatible or explicitly set to undefined
         });
     }
 }

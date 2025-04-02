@@ -1,4 +1,3 @@
-import * as dot from 'dot-wild';
 import { Adapter, AdapterInterface } from './adapters';
 import { AppManager, AppManagerInterface } from './app-managers';
 import { CacheManager } from './cache-managers/cache-manager';
@@ -18,9 +17,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { WebhookSender } from './webhook-sender';
 import { WebSocket } from 'uWebSockets.js';
 import { WsHandler } from './ws-handler';
+import { Utils } from './utils';
+import Discover from 'node-discover';
 
-const Discover = require('node-discover');
-const queryString = require('query-string');
 const uWS = require('uWebSockets.js');
 
 export class Server {
@@ -212,8 +211,6 @@ export class Server {
             sqs: {
                 region: 'us-east-1',
                 endpoint: null,
-                clientOptions: {},
-                consumerOptions: {},
                 queueUrl: '',
                 processBatch: false,
                 batchSize: 1,
@@ -457,8 +454,8 @@ export class Server {
                     options[optionKey] = options[optionKey].toString();
                 }
             }
-
-            this.options = dot.set(this.options, optionKey, options[optionKey]);
+    
+            Utils.setNestedProperty(this.options, optionKey, options[optionKey]);
         }
     }
 
@@ -659,16 +656,18 @@ export class Server {
 
                 server.get(this.url('/apps/:appId/channels'), (res, req) => {
                     res.params = { appId: req.getParameter(0) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
-
+    
                     return this.httpHandler.channels(res);
                 });
 
                 server.get(this.url('/apps/:appId/channels/:channelName'), (res, req) => {
                     res.params = { appId: req.getParameter(0), channel: req.getParameter(1) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
 
@@ -677,7 +676,8 @@ export class Server {
 
                 server.get(this.url('/apps/:appId/channels/:channelName/users'), (res, req) => {
                     res.params = { appId: req.getParameter(0), channel: req.getParameter(1) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
 
@@ -686,7 +686,8 @@ export class Server {
 
                 server.post(this.url('/apps/:appId/events'), (res, req) => {
                     res.params = { appId: req.getParameter(0) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
 
@@ -695,7 +696,8 @@ export class Server {
 
                 server.post(this.url('/apps/:appId/batch_events'), (res, req) => {
                     res.params = { appId: req.getParameter(0) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
 
@@ -704,7 +706,8 @@ export class Server {
 
                 server.post(this.url('/apps/:appId/users/:userId/terminate_connections'), (res, req) => {
                     res.params = { appId: req.getParameter(0), userId: req.getParameter(1) };
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
                     res.method = req.getMethod().toUpperCase();
                     res.url = req.getUrl();
 
@@ -734,7 +737,8 @@ export class Server {
 
             if (this.options.metrics.enabled) {
                 metricsServer.get(this.url('/metrics'), (res, req) => {
-                    res.query = queryString.parse(req.getQuery());
+                    const query = req.getQuery();
+                    res.query = Object.fromEntries(new URLSearchParams(query));
 
                     return this.httpHandler.metrics(res);
                 });
