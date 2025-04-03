@@ -1,8 +1,8 @@
-import { AdapterInterface } from './adapter-interface';
-import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter';
-import { Log } from '../log';
-import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
-import { Server } from '../server';
+import { AdapterInterface } from './adapter-interface.js';
+import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter.js';
+import { Log } from '../log.js';
+import { Redis, Cluster, ClusterOptions, RedisOptions } from 'ioredis';
+import { Server } from '../server.js';
 
 export class RedisAdapter extends HorizontalAdapter {
     /**

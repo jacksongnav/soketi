@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
-import 'dotenv/config';
-import { Server } from '../server';
-import { Log } from '../log';
+import 'dotenv/config.js';
+import { Server } from '../server.js';
+import { Log } from '../log.js';
 
 export class Cli {
     /**

@@ -1,5 +1,5 @@
-import { App } from '../app';
-import { AppManagerInterface } from './app-manager-interface';
+import { App } from '../app.js';
+import { AppManagerInterface } from './app-manager-interface.js';
 
 export class BaseAppManager implements AppManagerInterface {
     /**

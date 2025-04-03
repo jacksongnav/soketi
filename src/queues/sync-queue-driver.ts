@@ -1,7 +1,7 @@
-import { Job } from '../job';
-import { JobData } from '../webhook-sender';
-import { QueueInterface } from './queue-interface';
-import { Server } from '../server';
+import { Job } from '../job.js';
+import { JobData } from '../webhook-sender.js';
+import { QueueInterface } from './queue-interface.js';
+import { Server } from '../server.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export class SyncQueueDriver implements QueueInterface {

@@ -1,7 +1,7 @@
-import { App } from '../app';
-import { BaseAppManager } from './base-app-manager';
-import { Log } from '../log';
-import { Server } from '../server';
+import { App } from '../app.js';
+import { BaseAppManager } from './base-app-manager.js';
+import { Log } from '../log.js';
+import { Server } from '../server.js';
 
 export class ArrayAppManager extends BaseAppManager {
     /**

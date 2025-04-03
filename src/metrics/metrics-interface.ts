@@ -1,6 +1,6 @@
 import * as prom from 'prom-client';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 export interface MetricsInterface {
     /**

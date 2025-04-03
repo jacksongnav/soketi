@@ -1,4 +1,4 @@
-import { JobData } from '../webhook-sender';
+import { JobData } from '../webhook-sender.js';
 
 export interface QueueInterface {
     /**

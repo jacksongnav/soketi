@@ -1,10 +1,10 @@
 import * as prom from 'prom-client';
 import { WebSocket } from 'uWebSockets.js';
-import { Log } from './../log';
-import { MetricsInterface } from './metrics-interface';
-import { PrometheusMetricsDriver } from './prometheus-metrics-driver';
-import { Server } from '../server';
-import { WebSocketUserData } from '../types';
+import { Log } from './../log.js';
+import { MetricsInterface } from './metrics-interface.js';
+import { PrometheusMetricsDriver } from './prometheus-metrics-driver.js';
+import { Server } from '../server.js';
+import { WebSocketUserData } from '../types.js';
 
 export class Metrics implements MetricsInterface {
     /**

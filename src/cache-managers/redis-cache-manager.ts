@@ -1,6 +1,6 @@
-import { CacheManagerInterface } from './cache-manager-interface';
-import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
-import { Server } from '../server';
+import { CacheManagerInterface } from './cache-manager-interface.js';
+import { Redis, Cluster, ClusterOptions, RedisOptions } from 'ioredis';
+import { Server } from '../server.js';
 
 export class RedisCacheManager implements CacheManagerInterface {
     /**

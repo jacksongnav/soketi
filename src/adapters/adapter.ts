@@ -1,14 +1,14 @@
-import { AdapterInterface } from './adapter-interface';
-import { ClusterAdapter } from './cluster-adapter';
-import { LocalAdapter } from './local-adapter';
-import { Log } from '../log';
-import { Namespace } from '../namespace';
-import { NatsAdapter } from './nats-adapter';
-import { PresenceMemberInfo } from '../channels/presence-channel-manager';
-import { RedisAdapter } from './redis-adapter';
-import { Server } from '../server';
+import { AdapterInterface } from './adapter-interface.js';
+import { ClusterAdapter } from './cluster-adapter.js';
+import { LocalAdapter } from './local-adapter.js';
+import { Log } from '../log.js';
+import { Namespace } from '../namespace.js';
+import { NatsAdapter } from './nats-adapter.js';
+import { PresenceMemberInfo } from '../channels/presence-channel-manager.js';
+import { RedisAdapter } from './redis-adapter.js';
+import { Server } from '../server.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 export class Adapter implements AdapterInterface {
     /**

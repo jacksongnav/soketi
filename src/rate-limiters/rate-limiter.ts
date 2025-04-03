@@ -1,13 +1,13 @@
-import { App } from './../app';
-import { ClusterRateLimiter } from './cluster-rate-limiter';
-import { ConsumptionResponse, RateLimiterInterface } from './rate-limiter-interface';
-import { LocalRateLimiter } from './local-rate-limiter';
-import { Log } from './../log';
+import { App } from './../app.js';
+import { ClusterRateLimiter } from './cluster-rate-limiter.js';
+import { ConsumptionResponse, RateLimiterInterface } from './rate-limiter-interface.js';
+import { LocalRateLimiter } from './local-rate-limiter.js';
+import { Log } from './../log.js';
 import { RateLimiterAbstract } from 'rate-limiter-flexible';
-import { RedisRateLimiter } from './redis-rate-limiter';
-import { Server } from '../server';
+import { RedisRateLimiter } from './redis-rate-limiter.js';
+import { Server } from '../server.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 export class RateLimiter implements RateLimiterInterface {
     /**

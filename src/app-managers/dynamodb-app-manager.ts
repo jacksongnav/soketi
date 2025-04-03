@@ -1,10 +1,10 @@
-import { App } from '../app';
+import { App } from '../app.js';
 import { AttributeValue, DynamoDB } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { BaseAppManager } from './base-app-manager';
+import { BaseAppManager } from './base-app-manager.js';
 import { boolean } from 'boolean';
-import { Log } from '../log';
-import { Server } from '../server';
+import { Log } from '../log.js';
+import { Server } from '../server.js';
 
 export class DynamoDbAppManager extends BaseAppManager {
     /**

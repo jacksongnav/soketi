@@ -1,10 +1,10 @@
-import { App } from './app';
+import { App } from './app.js';
 import async from 'async';
 import { HttpResponse, RecognizedString } from 'uWebSockets.js';
-import { PusherApiMessage } from './message';
-import { Server } from './server';
-import { Utils } from './utils';
-import { Log } from './log';
+import { PusherApiMessage } from './message.js';
+import { Server } from './server.js';
+import { Utils } from './utils.js';
+import { Log } from './log.js';
 import { getHeapStatistics } from 'v8';
 
 

@@ -1,4 +1,4 @@
-import { SqlAppManager } from './sql-app-manager';
+import { SqlAppManager } from './sql-app-manager.js';
 
 export class MysqlAppManager extends SqlAppManager {
     /**

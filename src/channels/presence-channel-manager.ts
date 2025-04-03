@@ -1,10 +1,10 @@
-import { JoinResponse, LeaveResponse } from './public-channel-manager';
-import { Log } from '../log';
-import { PrivateChannelManager } from './private-channel-manager';
-import { PusherMessage } from '../message';
-import { Utils } from '../utils';
+import { JoinResponse, LeaveResponse } from './public-channel-manager.js';
+import { Log } from '../log.js';
+import { PrivateChannelManager } from './private-channel-manager.js';
+import { PusherMessage } from '../message.js';
+import { Utils } from '../utils.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 export interface PresenceMemberInfo {
     [key: string]: any;

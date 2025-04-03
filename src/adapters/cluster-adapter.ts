@@ -1,6 +1,6 @@
-import { AdapterInterface } from './adapter-interface';
-import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter';
-import { Server } from '../server';
+import { AdapterInterface } from './adapter-interface.js';
+import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter.js';
+import { Server } from '../server.js';
 
 export class ClusterAdapter extends HorizontalAdapter {
   /**

@@ -1,11 +1,11 @@
 import async from 'async';
 import { Consumer, ConsumerOptions } from 'sqs-consumer';
 import { createHash } from 'crypto';
-import { Job } from '../job';
-import { JobData } from '../webhook-sender';
-import { Log } from '../log';
-import { QueueInterface } from './queue-interface';
-import { Server } from '../server';
+import { Job } from '../job.js';
+import { JobData } from '../webhook-sender.js';
+import { Log } from '../log.js';
+import { QueueInterface } from './queue-interface.js';
+import { Server } from '../server.js';
 import { v4 as uuidv4 } from 'uuid';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 

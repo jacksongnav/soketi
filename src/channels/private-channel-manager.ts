@@ -1,8 +1,8 @@
-import { App } from '../app';
-import { JoinResponse, PublicChannelManager } from './public-channel-manager';
-import { PusherMessage } from '../message';
+import { App } from '../app.js';
+import { JoinResponse, PublicChannelManager } from './public-channel-manager.js';
+import { PusherMessage } from '../message.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 import Pusher from 'pusher';
 import { createHmac } from 'crypto';

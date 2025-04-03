@@ -1,9 +1,9 @@
 import * as prom from 'prom-client';
 import { WebSocket } from 'uWebSockets.js';
-import { MetricsInterface } from './metrics-interface';
-import { Server } from '../server';
-import { Utils } from '../utils';
-import { WebSocketUserData } from '../types';
+import { MetricsInterface } from './metrics-interface.js';
+import { Server } from '../server.js';
+import { Utils } from '../utils.js';
+import { WebSocketUserData } from '../types.js';
 
 interface PrometheusMetrics {
     connectedSockets?: prom.Gauge<'app_id'|'port'>;

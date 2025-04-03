@@ -1,8 +1,8 @@
-import { App } from './../app';
-import { BaseAppManager } from './base-app-manager';
-import { Log } from '../log';
-import { Knex, knex } from 'knex';
-import { Server } from './../server';
+import { App } from './../app.js';
+import { BaseAppManager } from './base-app-manager.js';
+import { Log } from '../log.js';
+import knex, { Knex } from 'knex';
+import { Server } from './../server.js';
 
 export abstract class SqlAppManager extends BaseAppManager {
     /**

@@ -1,9 +1,9 @@
 import async from 'async';
-import { JobData } from '../webhook-sender';
+import { JobData } from '../webhook-sender.js';
 import { Queue, Worker } from 'bullmq'
-import { QueueInterface } from './queue-interface';
-import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
-import { Server } from '../server';
+import { QueueInterface } from './queue-interface.js';
+import { Redis, Cluster, ClusterOptions, RedisOptions } from 'ioredis';
+import { Server } from '../server.js';
 
 interface QueueWithWorker {
     queue: Queue;

@@ -1,27 +1,27 @@
-import { AppManager, AppManagerInterface } from './app-managers';
-import { CacheManager } from './cache-managers/cache-manager';
-import { CacheManagerInterface } from './cache-managers/cache-manager-interface';
-import { HttpHandler } from './http-handler';
+import { AppManager, AppManagerInterface } from './app-managers/index.js';
+import { CacheManager } from './cache-managers/cache-manager.js';
+import { CacheManagerInterface } from './cache-managers/cache-manager-interface.js';
+import { HttpHandler } from './http-handler.js';
 import { HttpRequest, HttpResponse, TemplatedApp } from 'uWebSockets.js';
-import { Log } from './log';
-import { Metrics, MetricsInterface } from './metrics';
-import { Node } from './node';
-import { Options } from './options';
-import { Queue } from './queues/queue';
-import { QueueInterface } from './queues/queue-interface';
-import { RateLimiter } from './rate-limiters/rate-limiter';
-import { RateLimiterInterface } from './rate-limiters/rate-limiter-interface';
-import { uWebSocketMessage } from './message';
+import { Log } from './log.js';
+import { Metrics, MetricsInterface } from './metrics/index.js';
+import { Node } from './node.js';
+import { Options } from './options.js';
+import { Queue } from './queues/queue.js';
+import { QueueInterface } from './queues/queue-interface.js';
+import { RateLimiter } from './rate-limiters/rate-limiter.js';
+import { RateLimiterInterface } from './rate-limiters/rate-limiter-interface.js';
+import { uWebSocketMessage } from './message.js';
 import { v4 as uuidv4 } from 'uuid';
-import { WebhookSender } from './webhook-sender';
+import { WebhookSender } from './webhook-sender.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WsHandler } from './ws-handler';
-import { Utils } from './utils';
-import { WebSocketUserData } from './types';
+import { WsHandler } from './ws-handler.js';
+import { Utils } from './utils.js';
+import { WebSocketUserData } from './types.js';
 
 import { App, SSLApp, us_listen_socket_close } from 'uWebSockets.js';
-import { CustomDiscovery, NodeInfo } from './discovery';
-import { Adapter, AdapterInterface } from './adapters';
+import { CustomDiscovery, NodeInfo } from './discovery.js';
+import { Adapter, AdapterInterface } from './adapters/index.js';
 
 export class Server {
     /**

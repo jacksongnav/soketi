@@ -1,4 +1,4 @@
-import { PresenceMember, PresenceMemberInfo } from "./channels";
+import { PresenceMember, PresenceMemberInfo } from "./channels/index.js";
 
 export interface WebSocketUserData {
     app?: any;

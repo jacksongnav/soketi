@@ -1,9 +1,9 @@
 import { HttpResponse } from 'uWebSockets.js';
 import { LambdaClientConfig } from '@aws-sdk/client-lambda';
-import { Server } from './server';
+import { Server } from './server.js';
 
 import { createHmac } from 'crypto';
-import { getMD5, toOrderedArray } from 'pusher/lib/util';
+import { getMD5, toOrderedArray } from 'pusher/lib/util.js';
 
 export interface AppInterface {
     id: string;

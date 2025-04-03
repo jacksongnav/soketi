@@ -1,7 +1,7 @@
-import { LocalRateLimiter } from './local-rate-limiter';
+import { LocalRateLimiter } from './local-rate-limiter.js';
 import { RateLimiterAbstract, RateLimiterRedis } from 'rate-limiter-flexible';
-import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
-import { Server } from '../server';
+import { Redis, Cluster, ClusterOptions, RedisOptions } from 'ioredis';
+import { Server } from '../server.js';
 
 export class RedisRateLimiter extends LocalRateLimiter {
     /**

@@ -1,5 +1,5 @@
-import { CacheManagerInterface } from './cache-manager-interface';
-import { Server } from '../server';
+import { CacheManagerInterface } from './cache-manager-interface.js';
+import { Server } from '../server.js';
 
 interface Memory {
     [key: string]: {

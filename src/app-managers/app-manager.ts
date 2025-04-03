@@ -1,11 +1,11 @@
-import { App } from './../app';
-import { AppManagerInterface } from './app-manager-interface';
-import { ArrayAppManager } from './array-app-manager';
-import { DynamoDbAppManager } from './dynamodb-app-manager';
-import { Log } from '../log';
-import { MysqlAppManager } from './mysql-app-manager';
-import { PostgresAppManager } from './postgres-app-manager';
-import { Server } from '../server';
+import { App } from './../app.js';
+import { AppManagerInterface } from './app-manager-interface.js';
+import { ArrayAppManager } from './array-app-manager.js';
+import { DynamoDbAppManager } from './dynamodb-app-manager.js';
+import { Log } from '../log.js';
+import { MysqlAppManager } from './mysql-app-manager.js';
+import { PostgresAppManager } from './postgres-app-manager.js';
+import { Server } from '../server.js';
 
 /**
  * Class that controls the key/value data store.

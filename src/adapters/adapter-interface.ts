@@ -1,7 +1,7 @@
-import { Namespace } from '../namespace';
-import { PresenceMemberInfo } from '../channels/presence-channel-manager';
+import { Namespace } from '../namespace.js';
+import { PresenceMemberInfo } from '../channels/presence-channel-manager.js';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketUserData } from '../types';
+import { WebSocketUserData } from '../types.js';
 
 export interface AdapterInterface {
     /**

@@ -1,11 +1,11 @@
-import { App, WebhookInterface } from './app';
+import { App, WebhookInterface } from './app.js';
 import async from 'async';
 import axios from 'axios';
 import { createHmac } from 'crypto';
-import { Utils } from './utils';
+import { Utils } from './utils.js';
 import { InvokeCommandInput, Lambda } from '@aws-sdk/client-lambda';
-import { Log } from './log';
-import { Server } from './server';
+import { Log } from './log.js';
+import { Server } from './server.js';
 
 export interface ClientEventData {
     name: string;

@@ -1,8 +1,8 @@
-import { PresenceMember } from '../channels/presence-channel-manager';
-import { PusherMessage } from '../message';
-import { Server } from '../server';
-import { WebSocketUserData } from '../types';
-import { Utils } from '../utils';
+import { PresenceMember } from '../channels/presence-channel-manager.js';
+import { PusherMessage } from '../message.js';
+import { Server } from '../server.js';
+import { WebSocketUserData } from '../types.js';
+import { Utils } from '../utils.js';
 import { WebSocket } from 'uWebSockets.js';
 
 export interface JoinResponse {

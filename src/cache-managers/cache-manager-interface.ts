@@ -1,4 +1,4 @@
-import Redis, { Cluster } from 'ioredis';
+import { Cluster, Redis } from 'ioredis';
 
 export interface CacheManagerInterface {
     /**

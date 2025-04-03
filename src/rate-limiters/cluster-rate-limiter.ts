@@ -1,9 +1,9 @@
-import { App } from './../app';
-import { ConsumptionResponse } from './rate-limiter-interface';
-import { LocalRateLimiter } from './local-rate-limiter';
+import { App } from './../app.js';
+import { ConsumptionResponse } from './rate-limiter-interface.js';
+import { LocalRateLimiter } from './local-rate-limiter.js';
 import { RateLimiterAbstract, RateLimiterClusterMasterPM2 } from 'rate-limiter-flexible';
-import { Server } from '../server';
-import { NodeInfo } from '../discovery';
+import { Server } from '../server.js';
+import { NodeInfo } from '../discovery.js';
 
 import cluster from 'cluster';
 import pm2 from 'pm2';

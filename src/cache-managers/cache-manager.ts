@@ -1,8 +1,8 @@
-import { CacheManagerInterface } from './cache-manager-interface';
-import { Log } from '../log';
-import { MemoryCacheManager } from './memory-cache-manager';
-import { RedisCacheManager } from './redis-cache-manager';
-import { Server } from '../server';
+import { CacheManagerInterface } from './cache-manager-interface.js';
+import { Log } from '../log.js';
+import { MemoryCacheManager } from './memory-cache-manager.js';
+import { RedisCacheManager } from './redis-cache-manager.js';
+import { Server } from '../server.js';
 
 export class CacheManager implements CacheManagerInterface {
     /**

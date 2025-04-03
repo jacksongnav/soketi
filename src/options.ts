@@ -1,4 +1,4 @@
-import { AppInterface } from './app';
+import { AppInterface } from './app.js';
 import { ClusterOptions, RedisOptions } from 'ioredis';
 import { ConsumerOptions } from 'sqs-consumer';
 import { SQSClientConfig } from '@aws-sdk/client-sqs';

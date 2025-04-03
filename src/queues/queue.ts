@@ -1,10 +1,10 @@
-import { JobData } from '../webhook-sender';
-import { Log } from '../log';
-import { QueueInterface } from './queue-interface';
-import { RedisQueueDriver } from './redis-queue-driver';
-import { SqsQueueDriver } from './sqs-queue-driver';
-import { SyncQueueDriver } from './sync-queue-driver';
-import { Server } from '../server';
+import { JobData } from '../webhook-sender.js';
+import { Log } from '../log.js';
+import { QueueInterface } from './queue-interface.js';
+import { RedisQueueDriver } from './redis-queue-driver.js';
+import { SqsQueueDriver } from './sqs-queue-driver.js';
+import { SyncQueueDriver } from './sync-queue-driver.js';
+import { Server } from '../server.js';
 
 export class Queue implements QueueInterface {
     /**

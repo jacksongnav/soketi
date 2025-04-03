@@ -1,8 +1,8 @@
-import { AdapterInterface } from './adapter-interface';
+import { AdapterInterface } from './adapter-interface.js';
 import { connect, JSONCodec, Msg, NatsConnection, StringCodec } from 'nats';
-import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter';
-import { Server } from '../server';
-import { timeout } from 'nats/lib/nats-base-client/util';
+import { HorizontalAdapter, PubsubBroadcastedMessage } from './horizontal-adapter.js';
+import { Server } from '../server.js';
+import { timeout } from 'nats/lib/nats-base-client/util.js';
 
 export class NatsAdapter extends HorizontalAdapter {
     /**

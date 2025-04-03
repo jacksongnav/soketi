@@ -1,6 +1,6 @@
 import * as dgram from 'dgram';
 import { EventEmitter } from 'events';
-import { Options } from './options';
+import { Options } from './options.js';
 import { networkInterfaces } from 'os';
 
 export interface NodeInfo {

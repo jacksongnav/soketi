@@ -1,14 +1,18 @@
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import { Cli } from './cli.js';
 
-let yargs = require('yargs')
+const argv = yargs(hideBin(process.argv))
     .usage('Usage: soketi <command> [options]')
-    .command('start', 'Start the server.', yargs => {
-        return yargs.option('config', { describe: 'The path for the config file. (optional)'});
-    }, (argv) => Cli.start(argv))
+    .command(
+        'start',
+        'Start the server.',
+        (yargs) => {
+            return yargs.option('config', { describe: 'The path for the config file. (optional)' });
+        },
+        (argv) => Cli.start(argv)
+    )
     .demandCommand(1, 'Please provide a valid command.')
     .help('help')
-    .alias('help', 'h');
-
-yargs.$0 = '';
-
-let argv = yargs.argv;
+    .alias('help', 'h')
+    .parse();
