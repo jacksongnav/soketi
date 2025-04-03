@@ -29,7 +29,6 @@
 		"arraybuffer-to-string": "^1.0.2",
 		"async": "^3.2.6",
 		"axios": "^1.8.4",
-		"boolean": "^3.2.0",
 		"bullmq": "^5.45.2",
 		"dotenv": "^16.4.7",
 		"ioredis": "^5.6.0",
@@ -69,7 +68,6 @@
 		"jest-circus": "^29.7.0",
 		"jest-cli": "^29.7.0",
 		"pusher-js": "^8.4.0",
-		"tcp-port-used": "^1.0.2",
 		"ts-jest": "^29.3.1",
 		"tslib": "^2.3.1",
 		"typescript": "^5.8.2"

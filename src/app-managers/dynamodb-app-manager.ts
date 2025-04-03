@@ -2,9 +2,9 @@ import { App } from '../app.js';
 import { AttributeValue, DynamoDB } from '@aws-sdk/client-dynamodb';
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { BaseAppManager } from './base-app-manager.js';
-import { boolean } from 'boolean';
 import { Log } from '../log.js';
 import { Server } from '../server.js';
+import { Utils } from '../utils.js';
 
 export class DynamoDbAppManager extends BaseAppManager {
     /**
@@ -102,7 +102,7 @@ export class DynamoDbAppManager extends BaseAppManager {
 
         // Making sure EnableClientMessages is boolean.
         if (appObject.EnableClientMessages instanceof Buffer) {
-            appObject.EnableClientMessages = boolean(appObject.EnableClientMessages.toString());
+            appObject.EnableClientMessages = Utils.isTruthy(appObject.EnableClientMessages.toString());
         }
 
         // JSON-decoding the Webhooks field.

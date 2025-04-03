@@ -77,6 +77,14 @@ export class Utils {
         return isPrivate;
     }
 
+    static isTruthy(value: any): boolean {
+        const truthyValues = [
+            true, 'true', 'TRUE', 't', 'T', 'yes', 'YES', 'y', 'Y', 'on', 'ON', '1', 1
+        ];
+    
+        return truthyValues.includes(value);
+    }
+
     /**
      * Check if the given channel name is a presence channel.
      */

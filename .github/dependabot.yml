@@ -43,7 +43,6 @@ updates:
         patterns:
           - "body-parser"
           - "express"
-          - "tcp-port-used"
       databases:
         patterns:
           - "knex"
@@ -52,12 +51,8 @@ updates:
           - "pg"
       utils:
         patterns:
-          - "arraybuffer-to-string"
           - "async"
-          - "boolean"
-          - "colors"
           - "dot*"
-          - "query-string"
           - "uuid"
       ws:
         patterns:
