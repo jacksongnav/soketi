@@ -1,14 +1,17 @@
 import async from 'async';
 import { Log } from '../src/log';
-import { PusherApiMessage } from '../src/message';
 import { Server } from './../src/server';
 import { v4 as uuidv4 } from 'uuid';
+import { createHmac } from "crypto"
 
-const bodyParser = require('body-parser');
-const express = require('express');
-const Pusher = require('pusher');
-const PusherJS = require('pusher-js');
-const tcpPortUsed = require('tcp-port-used');
+import bodyParser from 'body-parser';
+import express from 'express';
+import { ServerOptions } from '../src/types';
+import PusherServer from 'pusher';
+import { Options } from 'pusher-js';
+import * as Pusher from 'pusher-js';
+import PusherClient from 'pusher-js';
+import { createConnection } from 'net';
 
 export class Utils {
     public static wsServers: Server[] = [];
@@ -26,17 +29,77 @@ export class Utils {
         return (process.env.TEST_QUEUE_DRIVER || 'sync') === queueDriver;
     }
 
-    static waitForPortsToFreeUp(): Promise<any> {
-        return Promise.all([
-            tcpPortUsed.waitUntilFree(6001, 500, 5 * 1000),
-            tcpPortUsed.waitUntilFree(6002, 500, 5 * 1000),
-            tcpPortUsed.waitUntilFree(3001, 500, 5 * 1000),
-            tcpPortUsed.waitUntilFree(9601, 500, 5 * 1000),
-            tcpPortUsed.waitUntilFree(11002, 500, 5 * 1000),
-        ]);
+    static async isPortUsed(port: number, timeout: number = 5000): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            const startTime = Date.now();
+            let resolved = false; // Add a flag to track resolution
+    
+            const check = () => {
+                if (resolved) { // Check if already resolved
+                    return;
+                }
+    
+                const socket = createConnection({ port, host: '127.0.0.1' }, () => {
+                    socket.destroy();
+                    if (!resolved) {
+                        resolved = true;
+                        resolve(true);
+                    }
+                });
+    
+                socket.on('error', (err: any) => {
+                    socket.destroy();
+                    if (!resolved) {
+                        if (err.code === 'ECONNREFUSED') {
+                            resolved = true;
+                            resolve(false);
+                        } else {
+                            resolved = true;
+                            reject(err);
+                        }
+                    }
+                });
+    
+                if (Date.now() - startTime > timeout) {
+                    console.log(`[DEBUG] Timeout reached for port ${port} after ${timeout}ms.`);
+                    socket.destroy();
+                    if (!resolved) {
+                        resolved = true;
+                        reject(new Error(`Timeout after ${timeout}ms`));
+                    }
+                } else {
+                    if (!resolved) {
+                        setTimeout(check, 100); // Check again after a delay.
+                    }
+                }
+            };
+    
+            check();
+        });
     }
 
-    static newServer(options = {}, callback): any {
+    static async waitForPortsToFreeUp(): Promise<void> {
+        const ports = [6001, 6002, 3001, 9601, 11002];
+        const timeout = 5000;
+        const interval = 500;
+    
+        const checkPorts = async () => {
+            const results = await Promise.all(ports.map(port => this.isPortUsed(port, timeout)));
+    
+            if (results.every(result => !result)) {
+                return; // All ports are free.
+            } else {
+                console.log('[DEBUG] Some ports are still in use. Retrying...');
+                await new Promise(resolve => setTimeout(resolve, interval));
+                await checkPorts(); // Recursive call to check again.
+            }
+        };
+    
+        await checkPorts();
+    }
+
+    static newServer(options: ServerOptions = {}, callback): any {
+        console.log("Attempting to start server")
         options = {
             'cluster.prefix': uuidv4(),
             'adapter.redis.prefix': uuidv4(),
@@ -70,17 +133,21 @@ export class Utils {
             'shutdownGracePeriod': 1_000,
         };
 
-        return (new Server(options)).start((server: Server) => {
-            this.wsServers.push(server);
-
-            if (server.options.cache.driver === 'redis') {
-                server.cacheManager.driver.redisConnection.flushdb().then(() => {
+        try {
+            return (new Server(options)).start((server: Server) => {
+                this.wsServers.push(server);
+    
+                if (server.options.cache.driver === 'redis') {
+                    server.cacheManager?.driver?.redisConnection?.flushdb().then(() => {
+                        callback(server);
+                    });
+                } else {
                     callback(server);
-                });
-            } else {
-                callback(server);
-            }
-        });
+                }
+            });
+        } catch (error) {
+            console.error('Error starting server:', error);
+        }
     }
 
     static newClonedServer(server: Server, options = {}, callback): any {
@@ -94,7 +161,7 @@ export class Utils {
         }, callback);
     }
 
-    static newWebhookServer(requestHandler: CallableFunction, onReadyCallback: CallableFunction): any {
+    static newWebhookServer(requestHandler: (req: express.Request, res: express.Response, next?: express.NextFunction) => void, onReadyCallback: CallableFunction): any {
         let webhooksApp = express();
 
         webhooksApp.use(bodyParser.json());
@@ -156,86 +223,111 @@ export class Utils {
         ]);
     }
 
-    static newClient(options = {}, port = 6001, key = 'app-key', withStateChange = true): any {
-        let client = new PusherJS(key, {
-            wsHost: '127.0.0.1',
-            httpHost: '127.0.0.1',
-            wsPort: port,
-            wssPort: port,
-            httpPort: port,
-            httpsPort: port,
-            forceTLS: false,
-            encrypted: true,
-            disableStats: true,
-            enabledTransports: ['ws'],
-            ignoreNullOrigin: true,
-            encryptionMasterKeyBase64: 'nxzvbGF+f8FGhk/jOaZvgMle1tqxzF/VfUZLBLhhaH0=',
-            ...options,
-        });
+    static newClient(options?: Options, port = 6001, key = 'app-key', withStateChange = true): PusherClient {
+        try {
+            
+            let defaultOptions: Options = {
+                wsHost: '127.0.0.1',
+                authEndpoint: '/',
+                httpHost: '127.0.0.1',
+                cluster: 'mt1',
+                wsPort: port,
+                wssPort: port,
+                httpPort: port,
+                httpsPort: port,
+                forceTLS: false,
+                disableStats: true,
+                enabledTransports: ['ws'],
+                ignoreNullOrigin: true,
+            }
 
-        if (withStateChange) {
-            client.connection.bind('state_change', ({ current }) => {
-                if (current === 'unavailable') {
-                    console.log('The connection could not be made. Status: ' + current);
-                }
-            });
+            const pusherOptions = { ...defaultOptions, ...options };
+            /* @ts-ignore */
+            let client = new Pusher(key, pusherOptions) as PusherClient
+    
+            if (withStateChange) {
+                client.connection.bind('state_change', ({ current }) => {
+                    if (current === 'unavailable') {
+                        console.log('The connection could not be made. Status: ' + current);
+                    }
+                });
+            }
+    
+            return client;
+        } catch (e) {
+            console.error('Error creating new client:', e);
+            throw new Error('Failed to create a new Pusher client.');
         }
-
-        return client;
     }
 
-    static newBackend(appId = 'app-id', key = 'app-key', secret = 'app-secret', port = 6001): any {
-        return new Pusher({
-            appId,
-            key,
-            secret,
-            host: '127.0.0.1',
-            port,
-            encryptionMasterKeyBase64: 'nxzvbGF+f8FGhk/jOaZvgMle1tqxzF/VfUZLBLhhaH0=',
-        });
+    static newBackend(appId = 'app-id', key = 'app-key', secret = 'app-secret', port = "6001"): any {
+        try {
+            const test = new PusherServer({
+                appId,
+                key,
+                cluster: 'mt1',
+                secret,
+                host: '127.0.0.1',
+                port,
+            });
+            return test
+        } catch (e) {
+            console.error('Error creating new backend:', e);
+        }
+        
     }
 
-    static newClientForPrivateChannel(clientOptions = {}, port = 6001, key = 'app-key', userData = {}): any {
+    static newClientForPrivateChannel(clientOptions = {}, port = 6001, key = 'app-key', userData = {}): PusherClient {
+        try {
+            return this.newClient({
+                authorizer: (channel, options) => ({
+                    authorize: (socketId, callback) => {
+                        callback(null, {
+                            auth: this.signTokenForPrivateChannel(socketId, channel),
+                        });
+                    },
+                }),
+                userAuthentication: {
+                    transport: "jsonp",
+                    endpoint: '/',
+                    customHandler: ({ socketId }, callback) => {
+                        callback(null, {
+                            auth: this.signTokenForUserAuthentication(socketId, JSON.stringify(userData), key),
+                            user_data: JSON.stringify(userData),
+                        });
+                    },
+                },
+                cluster: "mt1",
+                ...clientOptions,
+            }, port, key);
+        } catch (error) {
+            console.error('Error creating client for private channel:', error);
+            throw new Error('Failed to create a client for the private channel.');
+        }
+    }
+
+    static newClientForEncryptedPrivateChannel(clientOptions = {}, port = 6001, key = 'app-key', userData = {}): PusherClient {
         return this.newClient({
             authorizer: (channel, options) => ({
                 authorize: (socketId, callback) => {
-                    callback(false, {
-                        auth: this.signTokenForPrivateChannel(socketId, channel),
-                        channel_data: null,
-                    });
-                },
-            }),
-            userAuthentication: {
-                customHandler: ({ socketId }, callback) => {
-                    callback(false, {
-                        auth: this.signTokenForUserAuthentication(socketId, JSON.stringify(userData), key),
-                        user_data: JSON.stringify(userData),
-                    });
-                },
-            },
-            ...clientOptions,
-        }, port, key);
-    }
-
-    static newClientForEncryptedPrivateChannel(clientOptions = {}, port = 6001, key = 'app-key', userData = {}): any {
-        return this.newClient({
-            authorizer: (channel, options) => ({
-                authorize: (socketId, callback) => {
-                    callback(false, {
+                    const sharedSecret = this.newBackend().channelSharedSecret(channel.name); // Generate shared secret
+                    callback(null, {
                         auth: this.signTokenForPrivateChannel(socketId, channel, key),
-                        channel_data: null,
-                        shared_secret: this.newBackend().channelSharedSecret(channel.name).toString('base64'),
+                        shared_secret: sharedSecret.toString('base64'), // Provide shared secret
                     });
                 },
             }),
             userAuthentication: {
+                transport: "jsonp",
+                endpoint: '/',
                 customHandler: ({ socketId }, callback) => {
-                    callback(false, {
+                    callback(null, {
                         auth: this.signTokenForUserAuthentication(socketId, JSON.stringify(userData), key),
                         user_data: JSON.stringify(userData),
                     });
                 },
             },
+            cluster: "mt1",
             ...clientOptions,
         }, port, key);
     }
@@ -244,20 +336,23 @@ export class Utils {
         return this.newClient({
             authorizer: (channel, options) => ({
                 authorize: (socketId, callback) => {
-                    callback(false, {
+                    callback(null, {
                         auth: this.signTokenForPresenceChannel(socketId, channel, user, key),
                         channel_data: JSON.stringify(user),
                     });
                 },
             }),
             userAuthentication: {
+                transport: "jsonp",
+                endpoint: '/',
                 customHandler: ({ socketId }, callback) => {
-                    callback(false, {
+                    callback(null, {
                         auth: this.signTokenForUserAuthentication(socketId, JSON.stringify(userData), key),
                         user_data: JSON.stringify(userData),
                     });
                 },
             },
+            cluster: "mt1",
             ...clientOptions,
         }, port, key);
     }
@@ -268,9 +363,10 @@ export class Utils {
         key = 'app-key',
         secret = 'app-secret'
     ): string {
-        let token = new Pusher.Token(key, secret);
+        const stringToSign = `${socketId}:${channel.name}`;
+        const hmac = createHmac('sha256', secret).update(stringToSign).digest('hex');
 
-        return key + ':' + token.sign(`${socketId}:${channel.name}`);
+        return key + ':' + hmac;
     }
 
     static signTokenForPresenceChannel(
@@ -280,10 +376,12 @@ export class Utils {
         key = 'app-key',
         secret = 'app-secret'
     ): string {
-        let token = new Pusher.Token(key, secret);
-
-        return key + ':' + token.sign(`${socketId}:${channel.name}:${JSON.stringify(channelData)}`);
+        const stringToSign = `${socketId}:${channel.name}:${JSON.stringify(channelData)}`;
+        const hmac = createHmac('sha256', secret).update(stringToSign).digest('hex');
+    
+        return `${key}:${hmac}`;
     }
+    
 
     static signTokenForUserAuthentication(
         socketId: string,
@@ -291,9 +389,20 @@ export class Utils {
         key = 'app-key',
         secret = 'app-secret'
     ): string {
-        let token = new Pusher.Token(key, secret);
-
-        return key + ':' + token.sign(`${socketId}::user::${userData}`);
+        console.log("signTokenForUserAuthentication called with:");
+        console.log("  socketId:", socketId);
+        console.log("  userData:", userData);
+        console.log("  key:", key);
+        console.log("  secret:", secret);
+    
+        const stringToSign = `${socketId}:${userData}`;
+        const hmac = createHmac('sha256', secret).update(stringToSign).digest('hex');
+        console.log("  hmac:", hmac);
+    
+        const finalToken = `${key}:${hmac}`;
+        console.log("  finalToken:", finalToken);
+    
+        return finalToken;
     }
 
     static wait(ms): Promise<void> {

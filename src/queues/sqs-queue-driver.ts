@@ -7,7 +7,6 @@ import { Log } from '../log';
 import { QueueInterface } from './queue-interface';
 import { Server } from '../server';
 import { v4 as uuidv4 } from 'uuid';
-import { SQS } from 'aws-sdk';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
 export class SqsQueueDriver implements QueueInterface {
@@ -124,7 +123,6 @@ export class SqsQueueDriver implements QueueInterface {
             apiVersion: '2012-11-05',
             region: sqsOptions.region || 'us-east-1',
             endpoint: sqsOptions.endpoint,
-            logger: undefined, // Ensure logger is compatible or explicitly set to undefined
         });
     }
 }

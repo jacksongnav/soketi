@@ -1,5 +1,6 @@
-import { PresenceMember, PresenceMemberInfo } from './channels/presence-channel-manager';
+import { PresenceMemberInfo } from './channels/presence-channel-manager';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from './types';
 
 export class Namespace {
     /**
@@ -10,7 +11,7 @@ export class Namespace {
     /**
      * The list of sockets connected to the namespace.
      */
-    public sockets: Map<string, WebSocket> = new Map();
+    public sockets: Map<string, WebSocket<WebSocketUserData>> = new Map();
 
     /**
      * The list of user IDs and their associated socket ids.
@@ -27,16 +28,17 @@ export class Namespace {
     /**
      * Get all sockets from this namespace.
      */
-    getSockets(): Promise<Map<string, WebSocket>> {
+    getSockets(): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return Promise.resolve(this.sockets);
     }
 
     /**
      * Add a new socket to the namespace.
      */
-    addSocket(ws: WebSocket): Promise<boolean> {
+    addSocket(ws: WebSocket<WebSocketUserData>): Promise<boolean> {
         return new Promise(resolve => {
-            this.sockets.set(ws.id, ws);
+            const user = ws.getUserData();
+            this.sockets.set(user.id, ws);
             resolve(true);
         });
     }
@@ -54,13 +56,14 @@ export class Namespace {
      * Add a socket ID to the channel identifier.
      * Return the total number of connections after the connection.
      */
-    addToChannel(ws: WebSocket, channel: string): Promise<number> {
+    addToChannel(ws: WebSocket<WebSocketUserData>, channel: string): Promise<number> {
         return new Promise(resolve => {
+            const user = ws.getUserData();
             if (!this.channels.has(channel)) {
                 this.channels.set(channel, new Set);
             }
 
-            this.channels.get(channel).add(ws.id);
+            this.channels.get(channel).add(user.id);
 
             resolve(this.channels.get(channel).size);
         });
@@ -132,10 +135,10 @@ export class Namespace {
     /**
      * Get all the channel sockets associated with this namespace.
      */
-    getChannelSockets(channel: string): Promise<Map<string, WebSocket>> {
+    getChannelSockets(channel: string): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return new Promise(resolve => {
             if (!this.channels.has(channel)) {
-                return resolve(new Map<string, WebSocket>());
+                return resolve(new Map<string, WebSocket<WebSocketUserData>>());
             }
 
             let wsIds = this.channels.get(channel);
@@ -147,7 +150,7 @@ export class Namespace {
                     }
 
                     return sockets.set(wsId, this.sockets.get(wsId));
-                }, new Map<string, WebSocket>())
+                }, new Map<string, WebSocket<WebSocketUserData>>())
             );
         });
     }
@@ -158,7 +161,8 @@ export class Namespace {
     getChannelMembers(channel: string): Promise<Map<string, PresenceMemberInfo>> {
         return this.getChannelSockets(channel).then(sockets => {
             return Array.from(sockets).reduce((members, [wsId, ws]) => {
-                let member: PresenceMember = ws.presence ? ws.presence.get(channel) : null;
+                const user = ws.getUserData();
+                let member: PresenceMemberInfo = user.presence ? user.presence.get(channel) : null;
 
                 if (member) {
                     members.set(member.user_id as string, member.user_info);
@@ -175,8 +179,9 @@ export class Namespace {
     terminateUserConnections(userId: number|string): void {
         this.getSockets().then(sockets => {
             [...sockets].forEach(([wsId, ws]) => {
-                if (ws.user && ws.user.id == userId) {
-                    ws.sendJson({
+                const user = ws.getUserData();
+                if (user.user && user.user.id == userId) {
+                    user.sendJson({
                         event: 'pusher:error',
                         data: {
                             code: 4009,
@@ -197,17 +202,18 @@ export class Namespace {
     /**
      * Add to the users list the associated socket connection ID.
      */
-    addUser(ws: WebSocket): Promise<void> {
-        if (!ws.user) {
+    addUser(ws: WebSocket<WebSocketUserData>): Promise<void> {
+        const user = ws.getUserData();
+        if (!user.user) {
             return Promise.resolve();
         }
 
-        if (!this.users.has(ws.user.id)) {
-            this.users.set(ws.user.id, new Set());
+        if (!this.users.has(user.user.id)) {
+            this.users.set(user.user.id, new Set());
         }
 
-        if (!this.users.get(ws.user.id).has(ws.id)) {
-            this.users.get(ws.user.id).add(ws.id);
+        if (!this.users.get(user.user.id).has(user.id)) {
+            this.users.get(user.user.id).add(user.id);
         }
 
         return Promise.resolve();
@@ -216,17 +222,18 @@ export class Namespace {
     /**
      * Remove the user associated with the connection ID.
      */
-    removeUser(ws: WebSocket): Promise<void> {
-        if (!ws.user) {
+    removeUser(ws: WebSocket<WebSocketUserData>): Promise<void> {
+        const user = ws.getUserData();
+        if (!user.user) {
             return Promise.resolve();
         }
 
-        if (this.users.has(ws.user.id)) {
-            this.users.get(ws.user.id).delete(ws.id);
+        if (this.users.has(user.user.id)) {
+            this.users.get(user.user.id).delete(user.id);
         }
 
-        if (this.users.get(ws.user.id) && this.users.get(ws.user.id).size === 0) {
-            this.users.delete(ws.user.id);
+        if (this.users.get(user.user.id) && this.users.get(user.user.id).size === 0) {
+            this.users.delete(user.user.id);
         }
 
         return Promise.resolve();
@@ -235,7 +242,7 @@ export class Namespace {
     /**
      * Get the sockets associated with an user.
      */
-    getUserSockets(userId: string|number): Promise<Set<WebSocket>> {
+    getUserSockets(userId: string|number): Promise<Set<WebSocket<WebSocketUserData>>> {
         let wsIds = this.users.get(userId);
 
         if (!wsIds || wsIds.size === 0) {
@@ -247,7 +254,7 @@ export class Namespace {
                 sockets.add(this.sockets.get(wsId));
 
                 return sockets;
-            }, new Set<WebSocket>())
+            }, new Set<WebSocket<WebSocketUserData>>())
         );
     }
 }

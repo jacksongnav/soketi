@@ -2,17 +2,20 @@ import { App } from '../app';
 import { JoinResponse, PublicChannelManager } from './public-channel-manager';
 import { PusherMessage } from '../message';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from '../types';
 
-const Pusher = require('pusher');
+import Pusher from 'pusher';
+import { createHmac } from 'crypto';
 
 export class PrivateChannelManager extends PublicChannelManager {
     /**
      * Join the connection to the channel.
      */
-    join(ws: WebSocket, channel: string, message?: PusherMessage): Promise<JoinResponse> {
+    join(ws: WebSocket<WebSocketUserData>, channel: string, message?: PusherMessage): Promise<JoinResponse> {
         let passedSignature = message?.data?.auth;
+        const user = ws.getUserData();
 
-        return this.signatureIsValid(ws.app, ws.id, message, passedSignature).then(isValid => {
+        return this.signatureIsValid(user.app, user.id, message, passedSignature).then(isValid => {
             if (!isValid) {
                 return {
                     ws,
@@ -27,8 +30,8 @@ export class PrivateChannelManager extends PublicChannelManager {
             return super.join(ws, channel, message).then(joinResponse => {
                 // If the users joined to a private channel with authentication,
                 // proceed clearing the authentication timeout.
-                if (joinResponse.success && ws.userAuthenticationTimeout) {
-                    clearTimeout(ws.userAuthenticationTimeout);
+                if (joinResponse.success && user.userAuthenticationTimeout) {
+                    clearTimeout(user.userAuthenticationTimeout);
                 }
 
                 return joinResponse;
@@ -50,11 +53,10 @@ export class PrivateChannelManager extends PublicChannelManager {
      */
     protected getExpectedSignature(app: App, socketId: string, message: PusherMessage): Promise<string> {
         return new Promise(resolve => {
-            let token = new Pusher.Token(app.key, app.secret);
-
-            resolve(
-                app.key + ':' + token.sign(this.getDataToSignForSignature(socketId, message))
-            );
+            const dataToSign = this.getDataToSignForSignature(socketId, message);
+            const hmac = createHmac('sha256', app.secret).update(dataToSign).digest('hex');
+    
+            resolve(`${app.key}:${hmac}`);
         });
     }
 

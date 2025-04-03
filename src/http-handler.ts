@@ -5,8 +5,8 @@ import { PusherApiMessage } from './message';
 import { Server } from './server';
 import { Utils } from './utils';
 import { Log } from './log';
+import { getHeapStatistics } from 'v8';
 
-const v8 = require('v8');
 
 export interface ChannelResponse {
     subscription_count: number;
@@ -57,7 +57,7 @@ export class HttpHandler {
                 arrayBuffers,
             } = process.memoryUsage();
 
-            let totalSize = v8.getHeapStatistics().total_available_size;
+            let totalSize = getHeapStatistics().total_available_size;
             let usedSize = rss + heapTotal + external + arrayBuffers;
             let percentUsage = (usedSize / totalSize) * 100;
 
@@ -96,7 +96,7 @@ export class HttpHandler {
                 arrayBuffers,
             } = process.memoryUsage();
 
-            let totalSize = v8.getHeapStatistics().total_available_size;
+            let totalSize = getHeapStatistics().total_available_size;
             let usedSize = rss + heapTotal + external + arrayBuffers;
             let freeSize = totalSize - usedSize;
             let percentUsage = (usedSize / totalSize) * 100;

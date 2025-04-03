@@ -1,6 +1,7 @@
 import { Namespace } from '../namespace';
 import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from '../types';
 
 export interface AdapterInterface {
     /**
@@ -31,7 +32,7 @@ export interface AdapterInterface {
     /**
      * Add a new socket to the namespace.
      */
-    addSocket(appId: string, ws: WebSocket): Promise<boolean>;
+    addSocket(appId: string, ws: WebSocket<WebSocketUserData>): Promise<boolean>;
 
     /**
      * Remove a socket from the namespace.
@@ -42,7 +43,7 @@ export interface AdapterInterface {
      * Add a socket ID to the channel identifier.
      * Return the total number of connections after the connection.
      */
-    addToChannel(appId: string, channel: string, ws: WebSocket): Promise<number>;
+    addToChannel(appId: string, channel: string, ws: WebSocket<WebSocketUserData>): Promise<number>;
 
     /**
      * Remove a socket ID from the channel identifier.
@@ -78,7 +79,7 @@ export interface AdapterInterface {
     /**
      * Get all sockets from the namespace.
      */
-    getSockets(appId: string, onlyLocal?: boolean): Promise<Map<string, WebSocket>>;
+    getSockets(appId: string, onlyLocal?: boolean): Promise<Map<string, WebSocket<WebSocketUserData>>>;
 
     /**
      * Get total sockets count.
@@ -98,7 +99,7 @@ export interface AdapterInterface {
     /**
      * Get all the channel sockets associated with a namespace.
      */
-    getChannelSockets(appId: string, channel: string, onlyLocal?: boolean): Promise<Map<string, WebSocket>>;
+    getChannelSockets(appId: string, channel: string, onlyLocal?: boolean): Promise<Map<string, WebSocket<WebSocketUserData>>>;
 
     /**
      * Get a given channel's total sockets count.
@@ -123,15 +124,15 @@ export interface AdapterInterface {
     /**
      * Add to the users list the associated socket connection ID.
      */
-    addUser(ws: WebSocket): Promise<void>;
+    addUser(ws: WebSocket<WebSocketUserData>): Promise<void>;
 
     /**
      * Remove the user associated with the connection ID.
      */
-    removeUser(ws: WebSocket): Promise<void>;
+    removeUser(ws: WebSocket<WebSocketUserData>): Promise<void>;
 
     /**
      * Get the sockets associated with an user.
      */
-    getUserSockets(appId: string, userId: string|number): Promise<Set<WebSocket>>;
+    getUserSockets(appId: string, userId: string|number): Promise<Set<WebSocket<WebSocketUserData>>>;
 }

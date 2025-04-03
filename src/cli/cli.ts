@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
-import { Log } from '..';
-import { Server } from './../server';
+import 'dotenv/config';
+import { Server } from '../server';
+import { Log } from '../log';
 
 export class Cli {
     /**
@@ -143,7 +144,6 @@ export class Cli {
      * Inject the .env vars into options if they exist.
      */
     protected overwriteOptionsFromEnv(): void {
-        require('dotenv').config();
 
         for (let envVar in this.envVariables) {
             let value = process.env[`SOKETI_${envVar}`] || null;

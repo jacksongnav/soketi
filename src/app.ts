@@ -1,9 +1,9 @@
 import { HttpResponse } from 'uWebSockets.js';
-import { Lambda } from 'aws-sdk';
+import { LambdaClientConfig } from '@aws-sdk/client-lambda';
 import { Server } from './server';
 
-const Pusher = require('pusher');
-const pusherUtil = require('pusher/lib/util');
+import { createHmac } from 'crypto';
+import { getMD5, toOrderedArray } from 'pusher/lib/util';
 
 export interface AppInterface {
     id: string;
@@ -45,7 +45,7 @@ export interface WebhookInterface {
     lambda: {
         async?: boolean;
         region?: string;
-        client_options?: Lambda.Types.ClientConfiguration,
+        client_options?: LambdaClientConfig,
     };
 }
 
@@ -274,23 +274,24 @@ export class App implements AppInterface {
         delete params['channelName'];
 
         if (res.rawBody || res.query['body_md5']) {
-            params['body_md5'] = pusherUtil.getMD5(res.rawBody || '');
+            params['body_md5'] = getMD5(res.rawBody || '');
         }
 
         return this.signingToken(
             res.method,
             res.url,
-            pusherUtil.toOrderedArray(params).join('&'),
+            toOrderedArray(params).join('&'),
         );
     }
 
     /**
      * Get the signing token for the given parameters.
      */
-    protected signingToken(method: string, path: string, params: string): string {
-        let token = new Pusher.Token(this.key, this.secret);
-
-        return token.sign([method, path, params].join("\n"));
+        protected signingToken(method: string, path: string, params: string): string {
+        const stringToSign = [method, path, params].join("\n");
+        const hmac = createHmac('sha256', this.secret).update(stringToSign).digest('hex');
+    
+        return `${this.key}:${hmac}`;
     }
 
     /**

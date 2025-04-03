@@ -1,4 +1,3 @@
-import { Adapter, AdapterInterface } from './adapters';
 import { AppManager, AppManagerInterface } from './app-managers';
 import { CacheManager } from './cache-managers/cache-manager';
 import { CacheManagerInterface } from './cache-managers/cache-manager-interface';
@@ -18,9 +17,11 @@ import { WebhookSender } from './webhook-sender';
 import { WebSocket } from 'uWebSockets.js';
 import { WsHandler } from './ws-handler';
 import { Utils } from './utils';
-import Discover from 'node-discover';
+import { WebSocketUserData } from './types';
 
-const uWS = require('uWebSockets.js');
+import { App, SSLApp, us_listen_socket_close } from 'uWebSockets.js';
+import { CustomDiscovery, NodeInfo } from './discovery';
+import { Adapter, AdapterInterface } from './adapters';
 
 export class Server {
     /**
@@ -315,7 +316,7 @@ export class Server {
     /**
      * The Discover instance.
      */
-    public discover: typeof Discover;
+    public discover: CustomDiscovery;
 
     /**
      * Initialize the server.
@@ -337,70 +338,75 @@ export class Server {
     async start(callback?: CallableFunction) {
         Log.br();
 
-        this.configureDiscovery().then(() => {
-            this.initializeDrivers().then(() => {
-
-                if (this.options.debug) {
-                    console.dir(this.options, { depth: 100 });
-                }
-
-                this.wsHandler = new WsHandler(this);
-                this.httpHandler = new HttpHandler(this);
-
-                if (this.options.debug) {
-                    Log.info('📡 soketi initialization....');
-                    Log.info('⚡ Initializing the HTTP API & Websockets Server...');
-                }
-
-                let server: TemplatedApp = this.shouldConfigureSsl()
-                    ? uWS.SSLApp({
-                        key_file_name: this.options.ssl.keyPath,
-                        cert_file_name: this.options.ssl.certPath,
-                        passphrase: this.options.ssl.passphrase,
-                        ca_file_name: this.options.ssl.caPath,
-                    })
-                    : uWS.App();
-
-                let metricsServer: TemplatedApp = uWS.App();
-
-                if (this.options.debug) {
-                    Log.info('⚡ Initializing the Websocket listeners and channels...');
-                }
-
-                this.configureWebsockets(server).then(server => {
+        try {
+            this.configureDiscovery().then(() => {
+                this.initializeDrivers().then(() => {
                     if (this.options.debug) {
-                        Log.info('⚡ Initializing the HTTP webserver...');
+                        console.dir(this.options, { depth: 100 });
+                    }
+    
+                    this.wsHandler = new WsHandler(this);
+                    this.httpHandler = new HttpHandler(this);
+    
+                    if (this.options.debug) {
+                        Log.info('📡 soketi initialization....');
+                        Log.info('⚡ Initializing the HTTP API & Websockets Server...');
                     }
 
-                    this.configureHttp(server).then(server => {
-                        this.configureMetricsServer(metricsServer).then(metricsServer => {
-                            metricsServer.listen(this.options.metrics.host, this.options.metrics.port, metricsServerProcess => {
-                                this.metricsServerProcess = metricsServerProcess;
 
-                                server.listen(this.options.host, this.options.port, serverProcess => {
-                                    this.serverProcess = serverProcess;
-
-                                    Log.successTitle('🎉 Server is up and running!');
-                                    Log.successTitle(`📡 The Websockets server is available at 127.0.0.1:${this.options.port}`);
-                                    Log.successTitle(`🔗 The HTTP API server is available at http://127.0.0.1:${this.options.port}`);
-                                    Log.successTitle(`🎊 The /usage endpoint is available on port ${this.options.metrics.port}.`);
-
-                                    if (this.options.metrics.enabled) {
-                                        Log.successTitle(`🌠 Prometheus /metrics endpoint is available on port ${this.options.metrics.port}.`);
-                                    }
-
-                                    Log.br();
-
-                                    if (callback) {
-                                        callback(this);
-                                    }
+                    let server: TemplatedApp = this.shouldConfigureSsl()
+                        ? SSLApp({
+                            key_file_name: this.options.ssl.keyPath,
+                            cert_file_name: this.options.ssl.certPath,
+                            passphrase: this.options.ssl.passphrase,
+                            ca_file_name: this.options.ssl.caPath,
+                        })
+                        : App();
+                    
+                    let metricsServer: TemplatedApp = App();
+                        
+                    if (this.options.debug) {
+                        Log.info('⚡ Initializing the Websocket listeners and channels...');
+                    }
+    
+                    this.configureWebsockets(server).then(server => {
+                        if (this.options.debug) {
+                            Log.info('⚡ Initializing the HTTP webserver...');
+                        }
+    
+                        this.configureHttp(server).then(server => {
+                            this.configureMetricsServer(metricsServer).then(metricsServer => {
+                                metricsServer.listen(this.options.metrics.host, this.options.metrics.port, metricsServerProcess => {
+                                    this.metricsServerProcess = metricsServerProcess;
+    
+                                    server.listen(this.options.host, this.options.port, serverProcess => {
+                                        this.serverProcess = serverProcess;
+    
+                                        Log.successTitle('🎉 Server is up and running!');
+                                        Log.successTitle(`📡 The Websockets server is available at 127.0.0.1:${this.options.port}`);
+                                        Log.successTitle(`🔗 The HTTP API server is available at http://127.0.0.1:${this.options.port}`);
+                                        Log.successTitle(`🎊 The /usage endpoint is available on port ${this.options.metrics.port}.`);
+    
+                                        if (this.options.metrics.enabled) {
+                                            Log.successTitle(`🌠 Prometheus /metrics endpoint is available on port ${this.options.metrics.port}.`);
+                                        }
+    
+                                        Log.br();
+    
+                                        if (callback) {
+                                            callback(this);
+                                        }
+                                    });
                                 });
                             });
                         });
                     });
                 });
             });
-        });
+        } catch (error) {
+            console.log('❎ Error while starting the server:', error);
+            return;
+        }
     }
 
     /**
@@ -429,11 +435,11 @@ export class Server {
                     ]).then(() => {
                         this.adapter.disconnect().then(() => {
                             if (this.serverProcess) {
-                                uWS.us_listen_socket_close(this.serverProcess);
+                                us_listen_socket_close(this.serverProcess);
                             }
 
                             if (this.metricsServerProcess) {
-                                uWS.us_listen_socket_close(this.metricsServerProcess);
+                                us_listen_socket_close(this.metricsServerProcess);
                             }
                         }).then(() => resolve());
                     });
@@ -566,61 +572,70 @@ export class Server {
      */
     protected configureDiscovery(): Promise<void> {
         return new Promise(resolve => {
-            this.discover = Discover(this.options.cluster, () => {
-                this.nodes.set('self', this.discover.me);
-
-                this.discover.on('promotion', () => {
-                    this.nodes.set('self', this.discover.me);
-
-                    if (this.options.debug) {
-                        Log.discoverTitle('Promoted from node to master.');
-                        Log.discover(this.discover.me);
-                    }
-                });
-
-                this.discover.on('demotion', () => {
-                    this.nodes.set('self', this.discover.me);
-
-                    if (this.options.debug) {
-                        Log.discoverTitle('Demoted from master to node.');
-                        Log.discover(this.discover.me);
-                    }
-                });
-
-                this.discover.on('added', (node: Node) => {
-                    this.nodes.set('self', this.discover.me);
-                    this.nodes.set(node.id, node);
-
-                    if (this.options.debug) {
-                        Log.discoverTitle('New node added.');
-                        Log.discover(node);
-                    }
-                });
-
-                this.discover.on('removed', (node: Node) => {
-                    this.nodes.set('self', this.discover.me);
-                    this.nodes.delete(node.id);
-
-                    if (this.options.debug) {
-                        Log.discoverTitle('Node removed.');
-                        Log.discover(node);
-                    }
-                });
-
-                this.discover.on('master', (node: Node) => {
-                    this.nodes.set('self', this.discover.me);
-                    this.nodes.set(node.id, node);
-
-                    if (this.options.debug) {
-                        Log.discoverTitle('New master.');
-                        Log.discover(node);
-                    }
-                });
-
-                resolve();
+          try {
+            this.discover = new CustomDiscovery(this.options.cluster);
+    
+            this.discover.on('added', (node: NodeInfo) => {
+              this.nodes.set('self', this.discover.me);
+              this.nodes.set(node.id, node);
+    
+              if (this.options.debug) {
+                Log.discoverTitle('New node added.');
+                Log.discover(node);
+              }
             });
+    
+            this.discover.on('removed', (node: NodeInfo) => {
+              this.nodes.set('self', this.discover.me);
+              this.nodes.delete(node.id);
+    
+              if (this.options.debug) {
+                Log.discoverTitle('Node removed.');
+                Log.discover(node);
+              }
+            });
+    
+            this.discover.on('master', (node: NodeInfo) => {
+              this.nodes.set('self', this.discover.me);
+              this.nodes.set(node.id, node);
+    
+              if (this.options.debug) {
+                Log.discoverTitle('New master.');
+                Log.discover(node);
+              }
+            });
+    
+            // Add promotion and demotion events if you want to use them.
+            this.discover.on('master', (node: NodeInfo) => {
+              if (node.id === this.discover.me.id){
+                  this.nodes.set('self', this.discover.me);
+                  if (this.options.debug) {
+                    Log.discoverTitle('Promoted from node to master.');
+                    Log.discover(this.discover.me);
+                  }
+              }
+             
+            });
+    
+            this.discover.on('master', (node: NodeInfo) => {
+              if (node.id !== this.discover.me.id){
+                  this.nodes.set('self', this.discover.me);
+                  if (this.options.debug) {
+                    Log.discoverTitle('Demoted from master to node.');
+                    Log.discover(this.discover.me);
+                  }
+              }
+            });
+            
+    
+            this.discover.start(); // Start the discovery process
+            resolve();
+          } catch (e) {
+            console.error('❎ Error while configuring the discovery:', e);
+            resolve(); // Resolve even if there's an error to prevent the server from hanging
+          }
         });
-    }
+      }
 
     /**
      * Configure the WebSocket logic.
@@ -632,9 +647,9 @@ export class Server {
                     idleTimeout: 120, // According to protocol
                     maxBackpressure: 1024 * 1024,
                     maxPayloadLength: 100 * 1024 * 1024, // 100 MB
-                    message: (ws: WebSocket, message: uWebSocketMessage, isBinary: boolean) => this.wsHandler.onMessage(ws, message, isBinary),
-                    open: (ws: WebSocket) => this.wsHandler.onOpen(ws),
-                    close: (ws: WebSocket, code: number, message: uWebSocketMessage) => this.wsHandler.onClose(ws, code, message),
+                    message: (ws: WebSocket<WebSocketUserData>, message: uWebSocketMessage, isBinary: boolean) => this.wsHandler.onMessage(ws, message, isBinary),
+                    open: (ws: WebSocket<WebSocketUserData>) => this.wsHandler.onOpen(ws),
+                    close: (ws: WebSocket<WebSocketUserData>, code: number, message: uWebSocketMessage) => this.wsHandler.onClose(ws, code, message),
                     upgrade: (res: HttpResponse, req: HttpRequest, context) => this.wsHandler.handleUpgrade(res, req, context),
                 });
             }

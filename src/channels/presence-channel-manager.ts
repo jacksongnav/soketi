@@ -4,6 +4,7 @@ import { PrivateChannelManager } from './private-channel-manager';
 import { PusherMessage } from '../message';
 import { Utils } from '../utils';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from '../types';
 
 export interface PresenceMemberInfo {
     [key: string]: any;
@@ -19,9 +20,10 @@ export class PresenceChannelManager extends PrivateChannelManager {
     /**
      * Join the connection to the channel.
      */
-    join(ws: WebSocket, channel: string, message?: PusherMessage): Promise<JoinResponse> {
-        return this.server.adapter.getChannelMembersCount(ws.app.id, channel).then(membersCount => {
-            if (membersCount + 1 > ws.app.maxPresenceMembersPerChannel) {
+    join(ws: WebSocket<WebSocketUserData>, channel: string, message?: PusherMessage): Promise<JoinResponse> {
+        const user = ws.getUserData();
+        return this.server.adapter.getChannelMembersCount(user.app.id, channel).then(membersCount => {
+            if (membersCount + 1 > user.app.maxPresenceMembersPerChannel) {
                 return {
                     success: false,
                     ws,
@@ -35,12 +37,12 @@ export class PresenceChannelManager extends PrivateChannelManager {
 
             let memberSizeInKb = Utils.dataToKilobytes(member.user_info);
 
-            if (memberSizeInKb > ws.app.maxPresenceMemberSizeInKb) {
+            if (memberSizeInKb > user.app.maxPresenceMemberSizeInKb) {
                 return {
                     success: false,
                     ws,
                     errorCode: 4301,
-                    errorMessage: `The maximum size for a channel member is ${ws.app.maxPresenceMemberSizeInKb} KB.`,
+                    errorMessage: `The maximum size for a channel member is ${user.app.maxPresenceMemberSizeInKb} KB.`,
                     type: 'LimitReached',
                 };
             }
@@ -73,12 +75,15 @@ export class PresenceChannelManager extends PrivateChannelManager {
     /**
      * Mark the connection as closed and unsubscribe it.
      */
-    leave(ws: WebSocket, channel: string): Promise<LeaveResponse> {
+    leave(ws: WebSocket<WebSocketUserData>, channel: string): Promise<LeaveResponse> {
+        const user = ws.getUserData();
         return super.leave(ws, channel).then(response => {
+            const presenceMember = user.presence.get(channel);
             return {
                 ...response,
                 ...{
-                    member: ws.presence.get(channel),
+                    user_id: presenceMember.user_id,
+                    user_info: presenceMember.user_info,
                 },
             };
         });

@@ -1,4 +1,4 @@
-import { Cli } from './cli';
+import { Cli } from './cli.js';
 
 let yargs = require('yargs')
     .usage('Usage: soketi <command> [options]')

@@ -1,24 +1,22 @@
-const colors = require('colors');
-
 export class Log {
     static infoTitle(message: any): void {
-        this.log(message, 'bold', 'black', 'bgCyan', 'mx-2', 'px-1');
+        this.log(message, '\x1b[1m\x1b[30m\x1b[46m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static successTitle(message: any): void {
-        this.log(message, 'bold', 'black', 'bgGreen', 'mx-2', 'px-1');
+        this.log(message, '\x1b[1m\x1b[30m\x1b[42m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static errorTitle(message: any): void {
-        this.log(this.prefixWithTime(message), 'bold', 'black', 'bgRed', 'mx-2', 'px-1');
+        this.log(this.prefixWithTime(message), '\x1b[1m\x1b[30m\x1b[41m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static warningTitle(message: any): void {
-        this.log(this.prefixWithTime(message), 'bold', 'black', 'bgYellow', 'mx-2', 'px-1');
+        this.log(this.prefixWithTime(message), '\x1b[1m\x1b[30m\x1b[43m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static clusterTitle(message: any): void {
-        this.log(this.prefixWithTime(message), 'bold', 'yellow', 'bgMagenta', 'mx-2', 'px-1');
+        this.log(this.prefixWithTime(message), '\x1b[1m\x1b[33m\x1b[45m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static httpTitle(message: any): void {
@@ -26,7 +24,7 @@ export class Log {
     }
 
     static discoverTitle(message: any): void {
-        this.log(this.prefixWithTime(message), 'bold', 'gray', 'bgBrightCyan', 'mx-2', 'px-1');
+        this.log(this.prefixWithTime(message), '\x1b[1m\x1b[90m\x1b[106m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static websocketTitle(message: any): void {
@@ -34,27 +32,27 @@ export class Log {
     }
 
     static webhookSenderTitle(message: any): void {
-        this.log(this.prefixWithTime(message), 'bold', 'blue', 'bgWhite', 'mx-2', 'px-1');
+        this.log(this.prefixWithTime(message), '\x1b[1m\x1b[34m\x1b[47m', 'mx-2', 'px-1', '\x1b[0m');
     }
 
     static info(message: any): void {
-        this.log(message, 'cyan', 'mx-2');
+        this.log(message, '\x1b[36m', 'mx-2', '\x1b[0m');
     }
 
     static success(message: any): void {
-        this.log(message, 'green', 'mx-2');
+        this.log(message, '\x1b[32m', 'mx-2', '\x1b[0m');
     }
 
     static error(message: any): void {
-        this.log(message, 'red', 'mx-2');
+        this.log(message, '\x1b[31m', 'mx-2', '\x1b[0m');
     }
 
     static warning(message: any): void {
-        this.log(message, 'yellow', 'mx-2');
+        this.log(message, '\x1b[33m', 'mx-2', '\x1b[0m');
     }
 
     static cluster(message: any): void {
-        this.log(message, 'bold', 'magenta', 'mx-2');
+        this.log(message, '\x1b[1m\x1b[35m', 'mx-2', '\x1b[0m');
     }
 
     static http(message: any): void {
@@ -62,7 +60,7 @@ export class Log {
     }
 
     static discover(message: any): void {
-        this.log(message, 'bold', 'brightCyan', 'mx-2');
+        this.log(message, '\x1b[1m\x1b[96m', 'mx-2', '\x1b[0m');
     }
 
     static websocket(message: any): void {
@@ -70,7 +68,7 @@ export class Log {
     }
 
     static webhookSender(message: any): void {
-        this.log(message, 'bold', 'white', 'mx-2');
+        this.log(message, '\x1b[1m\x1b[37m', 'mx-2', '\x1b[0m');
     }
 
     static br(): void {
@@ -86,34 +84,43 @@ export class Log {
     }
 
     protected static log(message: any, ...styles: string[]): void {
-        let withColor = colors;
+        let coloredMessage = '';
+        let resetCode = '\x1b[0m'; // Default reset
 
         if (typeof message !== 'string') {
             return console.log(message);
         }
 
-        styles
-            .filter(style => ! /^[m|p]x-/.test(style))
-            .forEach((style) => withColor = withColor[style]);
+        const colorCodes = styles.filter(style => !/^m?x-/.test(style));
+        const marginCodes = styles.filter(style => /^mx-/.test(style));
+        const paddingCodes = styles.filter(style => /^px-/.test(style));
 
-        const applyMargins = (message: string): string => {
-            const spaces = styles
-                .filter(style => /^mx-/.test(style))
+        let preColor = '';
+        let postColor = '';
+
+        colorCodes.forEach((code) => {
+            if(code === '\x1b[0m'){
+                resetCode = code;
+            } else {
+                preColor += code;
+            }
+        });
+
+        const applyMargins = (msg: string): string => {
+            const spaces = marginCodes
                 .map(style => ' '.repeat(parseInt(style.substr(3))))
                 .join('');
+            return spaces + msg + spaces;
+        };
 
-            return spaces + message + spaces;
-        }
-
-        const applyPadding = (message: string): string => {
-            const spaces = styles
-                .filter(style => /^px-/.test(style))
+        const applyPadding = (msg: string): string => {
+            const spaces = paddingCodes
                 .map(style => ' '.repeat(parseInt(style.substr(3))))
                 .join('');
+            return spaces + msg + spaces;
+        };
 
-            return spaces + message + spaces;
-        }
-
-        console.log(applyMargins(withColor(applyPadding(message))));
+        coloredMessage = preColor + applyPadding(message) + resetCode;
+        console.log(applyMargins(coloredMessage));
     }
 }

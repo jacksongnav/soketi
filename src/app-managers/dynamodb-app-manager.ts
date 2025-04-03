@@ -1,8 +1,8 @@
 import { App } from '../app';
-import { AttributeMap } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue, DynamoDB } from '@aws-sdk/client-dynamodb';
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { BaseAppManager } from './base-app-manager';
 import { boolean } from 'boolean';
-import { DynamoDB } from 'aws-sdk';
 import { Log } from '../log';
 import { Server } from '../server';
 
@@ -19,7 +19,10 @@ export class DynamoDbAppManager extends BaseAppManager {
         super();
 
         this.dynamodb = new DynamoDB({
+            // The key apiVersion is no longer supported in v3, and can be removed.
+            // @deprecated The client uses the "latest" apiVersion.
             apiVersion: '2012-08-10',
+
             region: server.options.appManager.dynamodb.region,
             endpoint: server.options.appManager.dynamodb.endpoint,
         });
@@ -34,7 +37,7 @@ export class DynamoDbAppManager extends BaseAppManager {
             Key: {
                 AppId: { S: id },
             },
-        }).promise().then((response) => {
+        }).then((response) => {
             let item = response.Item;
 
             if (!item) {
@@ -69,7 +72,7 @@ export class DynamoDbAppManager extends BaseAppManager {
             ExpressionAttributeValues: {
                 ':app_key': { S: key },
             },
-        }).promise().then((response) => {
+        }).then((response) => {
             let item = response.Items[0] || null;
 
             if (!item) {
@@ -94,8 +97,8 @@ export class DynamoDbAppManager extends BaseAppManager {
     /**
      * Transform the marshalled item to a key-value pair.
      */
-    protected unmarshallItem(item: AttributeMap): { [key: string]: any; } {
-        let appObject = DynamoDB.Converter.unmarshall(item);
+    protected unmarshallItem(item: Record<string, AttributeValue>): { [key: string]: any; } {
+        let appObject = unmarshall(item);
 
         // Making sure EnableClientMessages is boolean.
         if (appObject.EnableClientMessages instanceof Buffer) {

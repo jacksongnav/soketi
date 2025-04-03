@@ -109,6 +109,15 @@ export class Utils {
     }
 
     /**
+     * Converts Array Buffer to String
+     */
+    static ArrayBufferToString (buffer: ArrayBuffer, encoding?: BufferEncoding) {
+        if (encoding == null) encoding = 'utf8'
+    
+        return Buffer.from(buffer).toString(encoding)
+    }
+
+    /**
      * Check if client is a client event.
      */
     static isClientEvent(event: string): boolean {

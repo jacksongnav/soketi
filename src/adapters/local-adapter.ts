@@ -3,6 +3,7 @@ import { Namespace } from '../namespace';
 import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { Server } from '../server';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from '../types';
 
 export class LocalAdapter implements AdapterInterface {
     // TODO: Force disconnect a specific socket
@@ -48,7 +49,7 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Add a new socket to the namespace.
      */
-    async addSocket(appId: string, ws: WebSocket): Promise<boolean> {
+    async addSocket(appId: string, ws: WebSocket<WebSocketUserData>): Promise<boolean> {
         return this.getNamespace(appId).addSocket(ws);
     }
 
@@ -63,7 +64,7 @@ export class LocalAdapter implements AdapterInterface {
      * Add a socket ID to the channel identifier.
      * Return the total number of connections after the connection.
      */
-    async addToChannel(appId: string, channel: string, ws: WebSocket): Promise<number> {
+    async addToChannel(appId: string, channel: string, ws: WebSocket<WebSocketUserData>): Promise<number> {
         return this.getNamespace(appId).addToChannel(ws, channel).then(() => {
             return this.getChannelSocketsCount(appId, channel);
         });
@@ -86,7 +87,7 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Get all sockets from the namespace.
      */
-    async getSockets(appId: string, onlyLocal = false): Promise<Map<string, WebSocket>> {
+    async getSockets(appId: string, onlyLocal = false): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return this.getNamespace(appId).getSockets();
     }
 
@@ -116,7 +117,7 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Get all the channel sockets associated with a namespace.
      */
-    async getChannelSockets(appId: string, channel: string, onlyLocal = false): Promise<Map<string, WebSocket>> {
+    async getChannelSockets(appId: string, channel: string, onlyLocal = false): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return this.getNamespace(appId).getChannelSockets(channel);
     }
 
@@ -162,8 +163,9 @@ export class LocalAdapter implements AdapterInterface {
 
             this.getUserSockets(appId, userId).then(sockets => {
                 sockets.forEach(ws => {
-                    if (ws.sendJson) {
-                        ws.sendJson(JSON.parse(data));
+                    const user = ws.getUserData();
+                    if (user.sendJson) {
+                        user.sendJson(JSON.parse(data));
                     }
                 });
             });
@@ -173,13 +175,14 @@ export class LocalAdapter implements AdapterInterface {
 
         this.getNamespace(appId).getChannelSockets(channel).then(sockets => {
             sockets.forEach((ws) => {
-                if (exceptingId && exceptingId === ws.id) {
+                const user = ws.getUserData();
+                if (exceptingId && exceptingId === user.id) {
                     return;
                 }
 
                 // Fix race conditions.
-                if (ws.sendJson) {
-                    ws.sendJson(JSON.parse(data));
+                if (user.sendJson) {
+                    user.sendJson(JSON.parse(data));
                 }
             });
         });
@@ -195,21 +198,23 @@ export class LocalAdapter implements AdapterInterface {
     /**
      * Add to the users list the associated socket connection ID.
      */
-    addUser(ws: WebSocket): Promise<void> {
-        return this.getNamespace(ws.app.id).addUser(ws);
+    addUser(ws: WebSocket<WebSocketUserData>): Promise<void> {
+        const user = ws.getUserData();
+        return this.getNamespace(user.app.id).addUser(ws);
     }
 
     /**
      * Remove the user associated with the connection ID.
      */
-    removeUser(ws: WebSocket): Promise<void> {
-        return this.getNamespace(ws.app.id).removeUser(ws);
+    removeUser(ws: WebSocket<WebSocketUserData>): Promise<void> {
+        const user = ws.getUserData();
+        return this.getNamespace(user.app.id).removeUser(ws);
     }
 
     /**
      * Get the sockets associated with an user.
      */
-    getUserSockets(appId: string, userId: number|string): Promise<Set<WebSocket>> {
+    getUserSockets(appId: string, userId: number|string): Promise<Set<WebSocket<WebSocketUserData>>> {
         return this.getNamespace(appId).getUserSockets(userId);
     }
 

@@ -3,6 +3,7 @@ import { Log } from '../log';
 import { PresenceMemberInfo } from '../channels/presence-channel-manager';
 import { v4 as uuidv4 } from 'uuid';
 import { WebSocket } from 'uWebSockets.js';
+import { WebSocketUserData } from '../types';
 
 /**
  *                                          |-----> NODE1 ----> SEEKS DATA (ONREQUEST) ----> SEND TO THE NODE0 ---> NODE0 (ONRESPONSE) APPENDS DATA TO REQUEST OBJECT
@@ -57,7 +58,7 @@ export interface RequestBody extends RequestOptions {
 
 export interface Response {
     requestId: string;
-    sockets?: Map<string, WebSocket>;
+    sockets?: Map<string, WebSocket<WebSocketUserData>>;
     members?: [string, PresenceMemberInfo][];
     channels?: [string, string[]][];
     channelsWithSocketsCount?: [string, number][];
@@ -111,7 +112,10 @@ export abstract class HorizontalAdapter extends LocalAdapter {
         [RequestType.SOCKETS]: {
             computeResponse: (request: Request, response: Response) => {
                 if (response.sockets) {
-                    response.sockets.forEach(ws => request.sockets.set(ws.id, ws));
+                    response.sockets.forEach(ws => {
+                        const user = ws.getUserData();
+                        request.sockets.set(user.id, ws)
+                    });
                 }
             },
             resolveValue: (request: Request, response: Response) => {
@@ -121,7 +125,10 @@ export abstract class HorizontalAdapter extends LocalAdapter {
         [RequestType.CHANNEL_SOCKETS]: {
             computeResponse: (request: Request, response: Response) => {
                 if (response.sockets) {
-                    response.sockets.forEach(ws => request.sockets.set(ws.id, ws));
+                    response.sockets.forEach(ws => {
+                        const user = ws.getUserData();
+                        request.sockets.set(user.id, ws)
+                    });
                 }
             },
             resolveValue: (request: Request, response: Response) => {
@@ -307,7 +314,7 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     /**
      * Get all sockets from the namespace.
      */
-    async getSockets(appId: string, onlyLocal = false): Promise<Map<string, WebSocket>> {
+    async getSockets(appId: string, onlyLocal = false): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return new Promise((resolve, reject) => {
             super.getSockets(appId, true).then(localSockets => {
                 if (onlyLocal) {
@@ -415,7 +422,7 @@ export abstract class HorizontalAdapter extends LocalAdapter {
     /**
      * Get all the channel sockets associated with a namespace.
      */
-    async getChannelSockets(appId: string, channel: string, onlyLocal = false): Promise<Map<string, WebSocket>> {
+    async getChannelSockets(appId: string, channel: string, onlyLocal = false): Promise<Map<string, WebSocket<WebSocketUserData>>> {
         return new Promise((resolve, reject) => {
             super.getChannelSockets(appId, channel).then(localSockets => {
                 if (onlyLocal) {
@@ -574,30 +581,34 @@ export abstract class HorizontalAdapter extends LocalAdapter {
         switch (request.type) {
             case RequestType.SOCKETS:
                 this.processRequestFromAnotherInstance(request, () => super.getSockets(appId, true).then(sockets => {
-                    let localSockets: WebSocket[] = Array.from(sockets.values());
+                    let localSockets: WebSocket<WebSocketUserData>[] = Array.from(sockets.values());
 
                     return {
-                        sockets: localSockets.map(ws => ({
-                            id: ws.id,
-                            subscribedChannels: ws.subscribedChannels,
-                            presence: ws.presence,
-                            ip: ws.ip,
-                            ip2: ws.ip2,
-                        })),
+                        sockets: localSockets.map(ws => {
+                            const user = ws.getUserData();
+                            return {
+                            id: user.id,
+                            subscribedChannels: user.subscribedChannels,
+                            presence: user.presence,
+                            ip: user.ip,
+                            ip2: user.ip2,
+                        }}),
                     };
                 }));
                 break;
 
             case RequestType.CHANNEL_SOCKETS:
                 this.processRequestFromAnotherInstance(request, () => super.getChannelSockets(appId, request.opts.channel).then(sockets => {
-                    let localSockets: WebSocket[] = Array.from(sockets.values());
+                    let localSockets: WebSocket<WebSocketUserData>[] = Array.from(sockets.values());
 
                     return {
-                        sockets: localSockets.map(ws => ({
-                            id: ws.id,
-                            subscribedChannels: ws.subscribedChannels,
-                            presence: ws.presence,
-                        })),
+                        sockets: localSockets.map(ws => {
+                            const user = ws.getUserData();
+                            return {
+                            id: user.id,
+                            subscribedChannels: user.subscribedChannels,
+                            presence: user.presence,
+                        }}),
                     };
                 }));
                 break;
