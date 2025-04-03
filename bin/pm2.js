@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
-const { Cli } = require('./../dist/cli/cli');
+import { Cli } from "../dist/cli/cli.js";
 
-process.title = 'soketi-server';
+process.title = "soketi-server";
 
 Cli.startWithPm2();
